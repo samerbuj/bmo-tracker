@@ -30,9 +30,10 @@ p.subtitle { text-align: center; margin-top: 0; color: var(--secondary); margin-
 
 .input-group { margin-bottom: 20px; }
 label { font-weight: 600; display: block; margin-bottom: 8px; font-size: 0.9em; }
-input[type="text"], input[type="date"], input[type="number"] {
+input[type="text"], input[type="date"], input[type="number"], textarea {
     width: 100%; padding: 10px; border: 2px solid var(--border);
     border-radius: 10px; font-family: inherit; box-sizing: border-box;
+    resize: none;
 }
 
 .google-info-card {
