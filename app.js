@@ -173,8 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
         div.innerHTML = `
             <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
             <div class="rating-row">
-                <div class="rating-input"><label>Your Score</label><input type="number" id="${cat.id}-p1" min="1" max="10"></div>
-                <div class="rating-input"><label>Partner Score</label><input type="number" id="${cat.id}-p2" min="1" max="10"></div>
+                <div class="rating-input"><label>Samer</label><input type="number" id="${cat.id}-p1" min="1" max="10" placeholder="Score"></div>
+                <div class="rating-input"><label>Matilde</label><input type="number" id="${cat.id}-p2" min="1" max="10" placeholder="Score"></div>
             </div>
             <div class="slider-group">
                 <label>Weight: <span id="${cat.id}-weight-val">Normal</span></label>
