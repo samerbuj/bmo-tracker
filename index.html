@@ -7,184 +7,72 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #FFF8E7; /* Butter yellow */
+            --bg-color: #FFF8E7; 
             --card-bg: #FFFFFF;
-            --primary: #FFB347; /* Warm cheese/orange */
-            --text: #5D4037; /* Dark brown bread crust */
+            --primary: #FFB347; 
+            --secondary: #8D6E63;
+            --text: #5D4037; 
             --border: #F0E6D2;
         }
 
-        /* Full screen layout */
         body {
             font-family: 'Quicksand', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh; /* Takes up 100% of the browser window height */
-            color: var(--text);
-            overflow: hidden; /* Prevents the whole page from scrolling */
+            margin: 0; padding: 0; display: flex; height: 100vh;
+            color: var(--text); overflow: hidden;
         }
 
-        /* Left Side: 25% width, scrollable */
         .sidebar {
-            width: 25%;
-            min-width: 320px; /* Prevents it from getting too skinny */
-            background-color: var(--bg-color);
-            padding: 25px;
-            overflow-y: auto; /* Allows scrolling inside the sidebar */
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05); /* Soft shadow separating sidebar from map */
-            z-index: 10;
-            box-sizing: border-box;
+            width: 25%; min-width: 340px; background-color: var(--bg-color);
+            padding: 25px; overflow-y: auto; box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            z-index: 10; box-sizing: border-box; display: flex; flex-direction: column;
         }
 
-        /* Right Side: 75% width, contains the map */
-        .map-area {
-            flex-grow: 1;
-            background-color: #e5e3df; /* Default Google Maps background color */
-            position: relative;
+        .map-area { flex-grow: 1; background-color: #e5e3df; position: relative; }
+        #map { width: 100%; height: 100%; }
+
+        h1 { text-align: center; font-size: 1.8em; margin: 0 0 5px 0; }
+        p.subtitle { text-align: center; margin-top: 0; color: var(--secondary); margin-bottom: 25px; font-size: 0.9em; }
+
+        /* VIEW CONTAINERS */
+        .view-pane { display: none; flex-direction: column; }
+        .view-pane.active { display: flex; }
+
+        .input-group { margin-bottom: 20px; }
+        label { font-weight: 600; display: block; margin-bottom: 8px; font-size: 0.9em; }
+        input[type="text"], input[type="date"], input[type="number"] {
+            width: 100%; padding: 10px; border: 2px solid var(--border);
+            border-radius: 10px; font-family: inherit; box-sizing: border-box;
         }
 
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Typography and UI Elements */
-        h1 {
-            text-align: center;
-            font-size: 1.8em;
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
-
-        p.subtitle {
-            text-align: center;
-            margin-top: 0;
-            color: #8D6E63;
-            margin-bottom: 25px;
-            font-size: 0.9em;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-        }
-
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-
-        .category-card {
-            border: 2px solid var(--border);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: var(--card-bg);
-        }
-
-        .category-header {
-            font-size: 1.1em;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .rating-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .rating-input {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .rating-input input[type="number"] {
-            padding: 8px;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-        }
-
-        .slider-group {
-            margin-bottom: 10px;
-        }
-
-        .slider-group input[type="range"] {
-            width: 100%;
-        }
-
-        .coffee-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            font-weight: bold;
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid var(--border);
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 12px;
-            font-size: 1.1em;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            font-family: inherit;
-            transition: transform 0.1s;
-        }
-
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .history {
-            margin-top: 30px;
-            width: 100%;
-        }
+        /* FORM STYLES */
+        .selected-cafe-title { font-size: 1.4em; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 2px dashed var(--border); padding-bottom: 10px;}
+        .category-card { border: 2px solid var(--border); border-radius: 15px; padding: 15px; margin-bottom: 15px; background-color: var(--card-bg); }
+        .category-header { font-size: 1.1em; font-weight: 700; margin-bottom: 12px; }
+        .rating-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .rating-input { flex: 1; display: flex; flex-direction: column; }
+        .slider-group { margin-bottom: 10px; }
+        .slider-group input[type="range"] { width: 100%; }
         
-        .history-item {
-            background: var(--card-bg);
-            border: 2px solid var(--border);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-        }
+        .coffee-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-weight: bold; background: var(--card-bg); padding: 15px; border-radius: 15px; border: 2px solid var(--border); }
+        
+        /* BUTTONS */
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { background-color: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1em; font-weight: 700; cursor: pointer; width: 100%; font-family: inherit; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        button.cancel-btn { background-color: #E0E0E0; color: var(--text); }
 
-        /* Mobile responsiveness: stack them if the screen is too small */
+        /* HISTORY & DETAIL STYLES */
+        .history { margin-top: 10px; width: 100%; }
+        .history-item { background: var(--card-bg); border: 2px solid var(--border); padding: 15px; border-radius: 15px; margin-bottom: 10px; font-size: 0.9em; cursor: pointer; transition: background 0.2s;}
+        .history-item:hover { background: #fafafa; }
+        
+        .detail-card { background: var(--card-bg); border: 2px solid var(--border); padding: 20px; border-radius: 15px; text-align: center;}
+        .detail-score { font-size: 2.5em; font-weight: bold; color: var(--primary); margin: 10px 0; }
+
         @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-                overflow: auto;
-            }
-            .sidebar {
-                width: 100%;
-                box-shadow: none;
-                order: 2; /* Put map on top on mobile */
-            }
-            .map-area {
-                width: 100%;
-                height: 50vh;
-                order: 1;
-            }
+            body { flex-direction: column; overflow: auto; }
+            .sidebar { width: 100%; order: 2; box-shadow: none;}
+            .map-area { width: 100%; height: 50vh; order: 1; }
         }
     </style>
 </head>
@@ -194,24 +82,48 @@
     <h1>Our BMO Tracker 🥐🧀</h1>
     <p class="subtitle">The official Copenhagen café rating system</p>
 
-    <div class="input-group">
-        <label>Search for Café</label>
-        <input type="text" id="cafeSearch" placeholder="Start typing café name...">
+    <div id="homeView" class="view-pane active">
+        <div class="input-group">
+            <label>Add a new place!</label>
+            <input type="text" id="cafeSearch" placeholder="Search for a café...">
+        </div>
+        <div class="history">
+            <h2>Past Adventures 🗺️</h2>
+            <div id="historyList"></div>
+        </div>
     </div>
 
-    <div id="categoriesContainer"></div>
+    <div id="formView" class="view-pane">
+        <div class="selected-cafe-title" id="formCafeName">Café Name</div>
+        
+        <div class="input-group">
+            <label>When did we go?</label>
+            <input type="date" id="reviewDate">
+        </div>
 
-    <div class="coffee-toggle">
-        <input type="checkbox" id="hadCoffee" onchange="toggleCoffee()">
-        <label for="hadCoffee" style="margin:0;">We had coffee here! ☕</label>
+        <div id="categoriesContainer"></div>
+
+        <div class="coffee-toggle">
+            <input type="checkbox" id="hadCoffee" onchange="toggleCoffee()">
+            <label for="hadCoffee" style="margin:0;">We had coffee here! ☕</label>
+        </div>
+
+        <div class="btn-group">
+            <button class="cancel-btn" onclick="showHome()">Cancel</button>
+            <button onclick="calculateAndSave()">Save Review</button>
+        </div>
     </div>
 
-    <button onclick="calculateAndSave()">Save Review & Pin Map</button>
-
-    <div class="history" id="history">
-        <h2>Past Adventures 🗺️</h2>
-        <div id="historyList"></div>
+    <div id="detailView" class="view-pane">
+        <div class="detail-card">
+            <h2 id="detailName" style="margin-top:0;">Café Name</h2>
+            <p id="detailDate" style="color: var(--secondary);">Date</p>
+            <div class="detail-score" id="detailScore">10.0</div>
+            <p style="font-weight: 600;">Overall Weighted Score</p>
+        </div>
+        <button class="cancel-btn" style="margin-top: 20px;" onclick="showHome()">Back to Map</button>
     </div>
+
 </div>
 
 <div class="map-area">
@@ -219,7 +131,53 @@
 </div>
 
 <script>
-    // --- APP LOGIC ---
+    // --- UI NAVIGATION LOGIC ---
+    function showHome() {
+        document.getElementById('homeView').classList.add('active');
+        document.getElementById('formView').classList.remove('active');
+        document.getElementById('detailView').classList.remove('active');
+        document.getElementById('cafeSearch').value = ''; // Clear search
+        currentPlaceData = null;
+    }
+
+    function showForm(placeName) {
+        document.getElementById('homeView').classList.remove('active');
+        document.getElementById('formView').classList.add('active');
+        document.getElementById('detailView').classList.remove('active');
+        
+        document.getElementById('formCafeName').innerText = placeName;
+        
+        // Set date to today by default
+        document.getElementById('reviewDate').value = new Date().toISOString().split('T')[0];
+        
+        // Reset form inputs
+        categories.forEach(cat => {
+            document.getElementById(`${cat.id}-p1`).value = '';
+            document.getElementById(`${cat.id}-p2`).value = '';
+            document.getElementById(`${cat.id}-weight`).value = '3';
+            updateSliderLabel(cat.id);
+        });
+        document.getElementById('hadCoffee').checked = false;
+        toggleCoffee();
+    }
+
+    function showDetail(review) {
+        document.getElementById('homeView').classList.remove('active');
+        document.getElementById('formView').classList.remove('active');
+        document.getElementById('detailView').classList.add('active');
+        
+        document.getElementById('detailName').innerText = review.cafe;
+        
+        // Format the date nicely
+        const dateObj = new Date(review.date);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('detailDate').innerText = dateObj.toLocaleDateString(undefined, options);
+        
+        document.getElementById('detailScore').innerText = review.score;
+    }
+
+
+    // --- FORM GENERATION LOGIC ---
     const categories = [
         { id: 'bread', icon: '🍞', name: 'The Bread' },
         { id: 'cheese', icon: '🧀', name: 'The Cheese' },
@@ -238,14 +196,8 @@
         div.innerHTML = `
             <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
             <div class="rating-row">
-                <div class="rating-input">
-                    <label>Your Score</label>
-                    <input type="number" id="${cat.id}-p1" min="1" max="10">
-                </div>
-                <div class="rating-input">
-                    <label>Partner Score</label>
-                    <input type="number" id="${cat.id}-p2" min="1" max="10">
-                </div>
+                <div class="rating-input"><label>Your Score</label><input type="number" id="${cat.id}-p1" min="1" max="10"></div>
+                <div class="rating-input"><label>Partner Score</label><input type="number" id="${cat.id}-p2" min="1" max="10"></div>
             </div>
             <div class="slider-group">
                 <label>Weight: <span id="${cat.id}-weight-val">Normal</span></label>
@@ -265,64 +217,53 @@
         document.getElementById('card-coffee').style.display = document.getElementById('hadCoffee').checked ? 'block' : 'none';
     }
 
-    // --- MAP LOGIC ---
+    // --- MAP & DATA LOGIC ---
     let map;
     let markers = [];
     let currentPlaceData = null; 
 
     function initMap() {
-        // Center on Copenhagen
         const copenhagen = { lat: 55.6761, lng: 12.5683 };
         
         map = new google.maps.Map(document.getElementById("map"), {
             zoom: 13,
             center: copenhagen,
             mapId: "DEMO_MAP_ID",
-            disableDefaultUI: false, // Keeps zoom controls
-            zoomControl: true,
             mapTypeControl: false,
-            scaleControl: true,
             streetViewControl: false,
-            rotateControl: false,
             fullscreenControl: false
         });
 
-        // Setup Autocomplete
         const input = document.getElementById("cafeSearch");
         const autocomplete = new google.maps.places.Autocomplete(input);
         autocomplete.bindTo("bounds", map);
 
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
-            if (!place.geometry || !place.geometry.location) {
-                alert("No details available for input: '" + place.name + "'");
-                return;
-            }
+            if (!place.geometry || !place.geometry.location) return;
 
-            // Save data temporarily to push into local storage when they hit 'Save'
             currentPlaceData = {
                 name: place.name,
-                address: place.formatted_address,
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng()
             };
 
-            // Pan to the selected café and zoom in
             map.setCenter(place.geometry.location);
             map.setZoom(16);
+            
+            // Switch to the Add Review form
+            showForm(place.name);
         });
 
         renderHistoryAndPins();
     }
 
     function calculateAndSave() {
-        if (!currentPlaceData) {
-            alert("Please search and select a café from the top search bar first!");
-            return;
-        }
+        if (!currentPlaceData) return;
 
         let sumWeighted = 0, sumWeights = 0;
         const hadCoffee = document.getElementById('hadCoffee').checked;
+        const selectedDate = document.getElementById('reviewDate').value; // Get the user's selected date
 
         categories.forEach(cat => {
             if (cat.id === 'coffee' && !hadCoffee) return;
@@ -340,32 +281,20 @@
             cafe: currentPlaceData.name, 
             lat: currentPlaceData.lat,
             lng: currentPlaceData.lng,
-            date: new Date().toLocaleDateString(), 
+            date: selectedDate, // Save the selected date
             score: finalWeighted 
         };
 
         let history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
         history.unshift(review);
+        
+        // Sort history by the actual selected date (newest first)
+        history.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
         localStorage.setItem('bmoHistory', JSON.stringify(history));
         
-        // Reset form
-        currentPlaceData = null; 
-        document.getElementById('cafeSearch').value = ''; 
-        
-        // Reset inputs to blank/default
-        categories.forEach(cat => {
-            document.getElementById(`${cat.id}-p1`).value = '';
-            document.getElementById(`${cat.id}-p2`).value = '';
-            document.getElementById(`${cat.id}-weight`).value = '3';
-            updateSliderLabel(cat.id);
-        });
-        document.getElementById('hadCoffee').checked = false;
-        toggleCoffee();
-
-        // Re-render
         renderHistoryAndPins();
-        
-        // Pan map slightly out to see context
+        showHome();
         map.setZoom(14);
     }
 
@@ -374,33 +303,45 @@
         const list = document.getElementById('historyList');
         list.innerHTML = '';
         
-        // Clear old markers
         markers.forEach(marker => marker.setMap(null));
         markers = [];
 
         history.forEach(item => {
-            // Add to list in sidebar
-            list.innerHTML += `<div class="history-item">
+            // Render list item (clicking it also opens detail view and centers map)
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            // Format date for the tiny list
+            const dateStr = new Date(item.date).toLocaleDateString();
+            
+            div.innerHTML = `
                 <strong>${item.cafe}</strong> <br>
-                <span style="color: #8D6E63; font-size: 0.9em;">${item.date}</span> <br>
+                <span style="color: var(--secondary); font-size: 0.9em;">${dateStr}</span> <br>
                 ✨ <strong>Score: ${item.score}/10</strong>
-            </div>`;
+            `;
+            
+            div.onclick = () => {
+                showDetail(item);
+                if (item.lat && item.lng) {
+                    map.setCenter({lat: item.lat, lng: item.lng});
+                    map.setZoom(16);
+                }
+            };
+            list.appendChild(div);
 
-            // Add pin to map
+            // Render Map Pin
             if (item.lat && item.lng && map) {
                 const marker = new google.maps.Marker({
                     position: { lat: item.lat, lng: item.lng },
                     map: map,
-                    title: `${item.cafe} (${item.score}/10)`,
+                    title: item.cafe,
                     animation: google.maps.Animation.DROP
                 });
                 
-                // Add a little click window to the marker
-                const infowindow = new google.maps.InfoWindow({
-                    content: `<div><strong>${item.cafe}</strong><br>Score: ${item.score}/10</div>`
-                });
+                // When you click the map pin, open the detail view on the left!
                 marker.addListener("click", () => {
-                    infowindow.open(map, marker);
+                    showDetail(item);
+                    map.setCenter(marker.getPosition());
                 });
 
                 markers.push(marker);
