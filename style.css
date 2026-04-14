@@ -59,7 +59,32 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 .rating-row { display: flex; gap: 10px; margin-bottom: 12px; }
 .rating-input { flex: 1; display: flex; flex-direction: column; }
 
-.coffee-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-weight: bold; background: var(--card-bg); padding: 15px; border-radius: 15px; border: 2px solid var(--border); }
+/* --- NEW COFFEE ANIMATION STYLES --- */
+.coffee-toggle { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    font-weight: bold; 
+}
+.coffee-toggle input[type="checkbox"] {
+    width: 18px; 
+    height: 18px; 
+    cursor: pointer; 
+    accent-color: var(--primary); /* Makes the checkbox orange! */
+}
+
+/* The Grid trick for smooth sliding */
+.coffee-collapsible {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+.coffee-collapsible.open {
+    grid-template-rows: 1fr;
+}
+.coffee-collapsible-inner {
+    overflow: hidden;
+}
 
 .btn-group { display: flex; gap: 10px; margin-top: 10px; }
 button { background-color: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1em; font-weight: 700; cursor: pointer; width: 100%; font-family: inherit; transition: transform 0.1s; }

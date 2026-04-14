@@ -164,7 +164,7 @@ const categories = [
     { id: 'cheese', icon: '🧀', name: 'The Cheese' },
     { id: 'place', icon: '🪴', name: 'The Place / Vibe' },
     { id: 'price', icon: '💸', name: 'Price / Value' },
-    { id: 'coffee', icon: '☕', name: 'The Coffee', hiddenAtStart: true }
+    { id: 'coffee', icon: '☕', name: 'The Coffee' } // Removed hiddenAtStart
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -173,16 +173,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const div = document.createElement('div');
         div.className = 'category-card';
         div.id = `card-${cat.id}`;
-        if (cat.hiddenAtStart) div.style.display = 'none';
 
-        // Weights/sliders have been removed entirely here
-        div.innerHTML = `
-            <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
-            <div class="rating-row">
-                <div class="rating-input"><label>Samer</label><input type="number" id="${cat.id}-p1" min="1" max="10" placeholder="Score"></div>
-                <div class="rating-input"><label>Matilde</label><input type="number" id="${cat.id}-p2" min="1" max="10" placeholder="Score"></div>
-            </div>
-        `;
+        if (cat.id === 'coffee') {
+            // Build the special Coffee block with the toggle built-in
+            div.innerHTML = `
+                <div class="coffee-toggle">
+                    <input type="checkbox" id="hadCoffee" onchange="toggleCoffee()">
+                    <label for="hadCoffee" style="margin:0; cursor: pointer; font-size: 1.1em; width: 100%;">${cat.icon} We had coffee here!</label>
+                </div>
+                <div class="coffee-collapsible" id="coffee-collapsible">
+                    <div class="coffee-collapsible-inner">
+                        <div style="height: 15px;"></div> <div class="rating-row" style="margin-bottom: 0;">
+                            <div class="rating-input"><label>Samer</label><input type="number" id="${cat.id}-p1" min="1" max="10" placeholder="Score"></div>
+                            <div class="rating-input"><label>Matilde</label><input type="number" id="${cat.id}-p2" min="1" max="10" placeholder="Score"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Build the standard blocks
+            div.innerHTML = `
+                <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
+                <div class="rating-row" style="margin-bottom: 0;">
+                    <div class="rating-input"><label>Samer</label><input type="number" id="${cat.id}-p1" min="1" max="10" placeholder="Score"></div>
+                    <div class="rating-input"><label>Matilde</label><input type="number" id="${cat.id}-p2" min="1" max="10" placeholder="Score"></div>
+                </div>
+            `;
+        }
         container.appendChild(div);
     });
     
@@ -190,7 +207,14 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function toggleCoffee() {
-    document.getElementById('card-coffee').style.display = document.getElementById('hadCoffee').checked ? 'block' : 'none';
+    const isChecked = document.getElementById('hadCoffee').checked;
+    const collapsible = document.getElementById('coffee-collapsible');
+    
+    if (isChecked) {
+        collapsible.classList.add('open');
+    } else {
+        collapsible.classList.remove('open');
+    }
 }
 
 // --- MAP & INIT LOGIC ---
