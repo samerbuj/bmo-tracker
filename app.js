@@ -13,7 +13,7 @@ let markers = [];
 let currentPlaceData = null; 
 let activeSearchMarker = null; 
 let globalInfoWindow; 
-let currentReviewIndex = null; 
+let currentReviewIndex = null; // Tracks which review we are editing
 
 const breadIconURL = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><text x="0" y="28" font-size="28">🥖</text></svg>`;
 
@@ -24,7 +24,7 @@ function showHome() {
     document.getElementById('detailView').classList.remove('active');
     document.getElementById('cafeSearch').value = ''; 
     currentPlaceData = null;
-    currentReviewIndex = null; 
+    currentReviewIndex = null; // Reset index when going home
 }
 
 function cancelReview() {
@@ -39,6 +39,7 @@ function closeDetail() {
     map.setZoom(13);
 }
 
+// Opens form for a BRAND NEW place
 function showForm(placeData) {
     currentReviewIndex = null; 
     document.getElementById('homeView').classList.remove('active');
@@ -48,9 +49,6 @@ function showForm(placeData) {
     document.getElementById('formCafeName').innerText = placeData.name;
     document.getElementById('reviewDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('formGoogleRating').innerText = `🌍 Google Rating: ${placeData.googleRating} / 5`;
-    
-    // Reset Comment
-    document.getElementById('reviewComment').value = '';
     
     const photoGallery = document.getElementById('formPhotos');
     photoGallery.innerHTML = '';
@@ -83,15 +81,6 @@ function showDetail(review, index) {
     
     document.getElementById('detailScore').innerText = review.score;
     document.getElementById('detailComparison').innerText = `🌍 Google Users gave it: ${review.googleRating || 'N/A'}/5`;
-
-    // Show Comment ONLY if it exists
-    const commentContainer = document.getElementById('detailCommentContainer');
-    if (review.comment && review.comment.trim() !== '') {
-        document.getElementById('detailCommentText').innerText = review.comment;
-        commentContainer.style.display = 'block';
-    } else {
-        commentContainer.style.display = 'none';
-    }
 
     const detailPhotos = document.getElementById('detailPhotos');
     detailPhotos.innerHTML = '';
@@ -133,9 +122,6 @@ function openEditForm() {
     document.getElementById('reviewDate').value = review.date;
     document.getElementById('formGoogleRating').innerText = `🌍 Google Rating: ${review.googleRating || 'N/A'} / 5`;
     
-    // Repopulate comment if it exists
-    document.getElementById('reviewComment').value = review.comment || '';
-    
     const photoGallery = document.getElementById('formPhotos');
     photoGallery.innerHTML = '';
     if (review.photos && review.photos.length > 0) {
@@ -174,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
         div.id = `card-${cat.id}`;
         if (cat.hiddenAtStart) div.style.display = 'none';
 
+        // Weights/sliders have been removed entirely here
         div.innerHTML = `
             <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
             <div class="rating-row">
@@ -252,7 +239,6 @@ function calculateAndSave() {
     let categoryCount = 0;
     const hadCoffee = document.getElementById('hadCoffee').checked;
     const selectedDate = document.getElementById('reviewDate').value; 
-    const commentText = document.getElementById('reviewComment').value.trim(); // Grab the comment!
     
     const rawScores = {}; 
 
@@ -261,13 +247,14 @@ function calculateAndSave() {
         const p1 = parseFloat(document.getElementById(`${cat.id}-p1`).value) || 0;
         const p2 = parseFloat(document.getElementById(`${cat.id}-p2`).value) || 0;
         
-        rawScores[cat.id] = { p1, p2 }; 
+        rawScores[cat.id] = { p1, p2 }; // Saves pure scores, no weights
         
         const catAvg = (p1 + p2) / 2;
         totalSum += catAvg;
         categoryCount++;
     });
 
+    // Simple unweighted average across all rated categories
     const finalScore = (categoryCount > 0) ? (totalSum / categoryCount).toFixed(1) : 0;
 
     const review = { 
@@ -278,8 +265,7 @@ function calculateAndSave() {
         score: finalScore,
         googleRating: currentPlaceData.googleRating, 
         photos: currentPlaceData.photos,
-        rawScores: rawScores,
-        comment: commentText // Save it to the review object
+        rawScores: rawScores 
     };
 
     let history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
