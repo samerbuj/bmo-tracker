@@ -1,7 +1,17 @@
+// --- IMPORT FIREBASE MODULAR SDK ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { 
+    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy 
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+// --- INITIALIZE FIREBASE ---
+const app = initializeApp(window.CONFIG.FIREBASE_CONFIG);
+const db = getFirestore(app);
+
 // --- DYNAMICALLY LOAD GOOGLE MAPS ---
 function loadGoogleMaps() {
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
@@ -13,35 +23,50 @@ let markers = [];
 let currentPlaceData = null; 
 let activeSearchMarker = null; 
 let globalInfoWindow; 
-let currentReviewIndex = null; // Tracks which review we are editing
+let currentReviewId = null; 
+let globalHistory = []; 
 
 const breadIconURL = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><text x="0" y="28" font-size="28">🥖</text></svg>`;
 
+// --- FETCH DATA FROM FIREBASE ---
+async function fetchReviews() {
+    try {
+        const q = query(collection(db, "bmo_reviews"), orderBy("date", "desc"));
+        const snapshot = await getDocs(q);
+        globalHistory = snapshot.docs.map(docSnapshot => ({
+            id: docSnapshot.id, 
+            ...docSnapshot.data()
+        }));
+        renderHistoryAndPins();
+    } catch (error) {
+        console.error("Error fetching reviews: ", error);
+    }
+}
+
 // --- UI NAVIGATION LOGIC ---
-function showHome() {
+window.showHome = function() {
     document.getElementById('homeView').classList.add('active');
     document.getElementById('formView').classList.remove('active');
     document.getElementById('detailView').classList.remove('active');
     document.getElementById('cafeSearch').value = ''; 
     currentPlaceData = null;
-    currentReviewIndex = null; // Reset index when going home
+    currentReviewId = null; 
 }
 
-function cancelReview() {
+window.cancelReview = function() {
     if (activeSearchMarker) activeSearchMarker.setMap(null); 
-    showHome();
+    window.showHome();
     map.setZoom(13); 
 }
 
-function closeDetail() {
+window.closeDetail = function() {
     globalInfoWindow.close(); 
-    showHome();
+    window.showHome();
     map.setZoom(13);
 }
 
-// Opens form for a BRAND NEW place
 function showForm(placeData) {
-    currentReviewIndex = null; 
+    currentReviewId = null; 
     document.getElementById('homeView').classList.remove('active');
     document.getElementById('formView').classList.add('active');
     document.getElementById('detailView').classList.remove('active');
@@ -49,8 +74,6 @@ function showForm(placeData) {
     document.getElementById('formCafeName').innerText = placeData.name;
     document.getElementById('reviewDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('formGoogleRating').innerText = `🌍 Google Rating: ${placeData.googleRating} / 5`;
-    
-    // NEW: Clear the comment box
     document.getElementById('reviewComment').value = '';
     
     const photoGallery = document.getElementById('formPhotos');
@@ -66,11 +89,11 @@ function showForm(placeData) {
         document.getElementById(`${cat.id}-p2`).value = '';
     });
     document.getElementById('hadCoffee').checked = false;
-    toggleCoffee();
+    window.toggleCoffee();
 }
 
-function showDetail(review, index) {
-    currentReviewIndex = index; 
+function showDetail(review) {
+    currentReviewId = review.id; 
     
     document.getElementById('homeView').classList.remove('active');
     document.getElementById('formView').classList.remove('active');
@@ -82,10 +105,8 @@ function showDetail(review, index) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('detailDate').innerText = dateObj.toLocaleDateString(undefined, options);
     
-    // Set main score
     document.getElementById('detailScore').innerText = review.score;
     
-    // Handle secondary coffee score
     const coffeeScoreEl = document.getElementById('detailCoffeeScore');
     if (review.scoreWithCoffee) {
         coffeeScoreEl.style.display = 'block';
@@ -114,19 +135,21 @@ function showDetail(review, index) {
 }
 
 // --- EDIT & DELETE LOGIC ---
-function deleteReview() {
+window.deleteReview = async function() {
     if(confirm("Are you sure you want to delete this review? 🥺")) {
-        let history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
-        history.splice(currentReviewIndex, 1); 
-        localStorage.setItem('bmoHistory', JSON.stringify(history));
-        closeDetail();
-        renderHistoryAndPins();
+        try {
+            await deleteDoc(doc(db, "bmo_reviews", currentReviewId));
+            window.closeDetail();
+            fetchReviews(); 
+        } catch (error) {
+            console.error("Error deleting document: ", error);
+            alert("Failed to delete.");
+        }
     }
 }
 
-function openEditForm() {
-    const history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
-    const review = history[currentReviewIndex];
+window.openEditForm = function() {
+    const review = globalHistory.find(r => r.id === currentReviewId);
     
     currentPlaceData = {
         name: review.cafe,
@@ -143,8 +166,6 @@ function openEditForm() {
     document.getElementById('formCafeName').innerText = review.cafe;
     document.getElementById('reviewDate').value = review.date;
     document.getElementById('formGoogleRating').innerText = `🌍 Google Rating: ${review.googleRating || 'N/A'} / 5`;
-    
-    // NEW: Load existing comment into the text area
     document.getElementById('reviewComment').value = review.comment || '';
     
     const photoGallery = document.getElementById('formPhotos');
@@ -155,7 +176,7 @@ function openEditForm() {
     
     const hadCoffee = review.rawScores && review.rawScores['coffee'];
     document.getElementById('hadCoffee').checked = !!hadCoffee;
-    toggleCoffee();
+    window.toggleCoffee();
     
     categories.forEach(cat => {
         if (review.rawScores && review.rawScores[cat.id]) {
@@ -174,7 +195,7 @@ const categories = [
     { id: 'cheese', icon: '🧀', name: 'The Cheese' },
     { id: 'place', icon: '🪴', name: 'The Place / Vibe' },
     { id: 'price', icon: '💸', name: 'Price / Value' },
-    { id: 'coffee', icon: '☕', name: 'The Coffee' } // Removed hiddenAtStart
+    { id: 'coffee', icon: '☕', name: 'The Coffee' } 
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -185,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
         div.id = `card-${cat.id}`;
 
         if (cat.id === 'coffee') {
-            // Build the special Coffee block with the toggle built-in
             div.innerHTML = `
                 <div class="coffee-toggle">
                     <input type="checkbox" id="hadCoffee" onchange="toggleCoffee()">
@@ -193,7 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="coffee-collapsible" id="coffee-collapsible">
                     <div class="coffee-collapsible-inner">
-                        <div style="height: 15px;"></div> <div class="rating-row" style="margin-bottom: 0;">
+                        <div style="height: 15px;"></div>
+                        <div class="rating-row" style="margin-bottom: 0;">
                             <div class="rating-input"><label>Samer</label><input type="number" id="${cat.id}-p1" min="1" max="10" placeholder="Score"></div>
                             <div class="rating-input"><label>Matilde</label><input type="number" id="${cat.id}-p2" min="1" max="10" placeholder="Score"></div>
                         </div>
@@ -201,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
         } else {
-            // Build the standard blocks
             div.innerHTML = `
                 <div class="category-header"><span>${cat.icon} ${cat.name}</span></div>
                 <div class="rating-row" style="margin-bottom: 0;">
@@ -214,12 +234,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     loadGoogleMaps();
+    fetchReviews(); 
 });
 
-function toggleCoffee() {
+window.toggleCoffee = function() {
     const isChecked = document.getElementById('hadCoffee').checked;
     const collapsible = document.getElementById('coffee-collapsible');
-    
     if (isChecked) {
         collapsible.classList.add('open');
     } else {
@@ -277,11 +297,10 @@ window.initMap = function() {
 
         showForm(currentPlaceData);
     });
-
-    renderHistoryAndPins();
 };
 
-function calculateAndSave() {
+// --- SAVE TO FIREBASE ---
+window.calculateAndSave = async function() {
     if (!currentPlaceData) return;
 
     let coreSum = 0;
@@ -297,7 +316,6 @@ function calculateAndSave() {
         const p1Str = document.getElementById(`${cat.id}-p1`).value;
         const p2Str = document.getElementById(`${cat.id}-p2`).value;
         
-        // Skip coffee if checkbox is off, or if they checked it but left it completely blank
         if (cat.id === 'coffee' && (!hadCoffee || (p1Str === '' && p2Str === ''))) return;
 
         const p1 = parseFloat(p1Str) || 0;
@@ -307,17 +325,15 @@ function calculateAndSave() {
         const catAvg = (p1 + p2) / 2;
 
         if (cat.id === 'coffee') {
-            coffeeSum = catAvg; // Store coffee score separately
+            coffeeSum = catAvg; 
         } else {
-            coreSum += catAvg; // Add to main core score
+            coreSum += catAvg; 
             coreCount++;
         }
     });
 
-    // The MAIN score is strictly the core food/vibe categories
     const finalScore = (coreCount > 0) ? (coreSum / coreCount).toFixed(1) : 0;
     
-    // The SECONDARY score includes everything
     let finalScoreWithCoffee = null;
     if (hadCoffee && rawScores['coffee']) {
         finalScoreWithCoffee = ((coreSum + coffeeSum) / (coreCount + 1)).toFixed(1);
@@ -328,8 +344,8 @@ function calculateAndSave() {
         lat: currentPlaceData.lat,
         lng: currentPlaceData.lng,
         date: selectedDate, 
-        score: finalScore, // Main Score
-        scoreWithCoffee: finalScoreWithCoffee, // Secondary Score
+        score: finalScore, 
+        scoreWithCoffee: finalScoreWithCoffee, 
         hadCoffee: hadCoffee,
         googleRating: currentPlaceData.googleRating, 
         photos: currentPlaceData.photos,
@@ -337,38 +353,37 @@ function calculateAndSave() {
         comment: commentText 
     };
 
-    let history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
-    
-    if (currentReviewIndex !== null) {
-        history[currentReviewIndex] = review;
-    } else {
-        history.unshift(review);
-    }
-    
-    history.sort((a, b) => new Date(b.date) - new Date(a.date));
-    localStorage.setItem('bmoHistory', JSON.stringify(history));
-    
-    if (activeSearchMarker) activeSearchMarker.setMap(null);
+    try {
+        if (currentReviewId !== null) {
+            await updateDoc(doc(db, "bmo_reviews", currentReviewId), review);
+        } else {
+            await addDoc(collection(db, "bmo_reviews"), review);
+        }
+        
+        if (activeSearchMarker) activeSearchMarker.setMap(null);
+        window.showHome();
+        map.setZoom(14);
+        fetchReviews(); 
 
-    renderHistoryAndPins();
-    showHome();
-    map.setZoom(14);
+    } catch (error) {
+        console.error("Error saving document: ", error);
+        alert("Failed to save review to the cloud.");
+    }
 }
 
+// --- RENDER FROM CLOUD DATA ---
 function renderHistoryAndPins() {
-    const history = JSON.parse(localStorage.getItem('bmoHistory')) || [];
     const list = document.getElementById('historyList');
     list.innerHTML = '';
     
     markers.forEach(marker => marker.setMap(null));
     markers = [];
 
-    history.forEach((item, index) => { 
+    globalHistory.forEach((item) => { 
         const div = document.createElement('div');
         div.className = 'history-item';
         const dateStr = new Date(item.date).toLocaleDateString();
         
-        // Add coffee tag if they had it
         let extraScoreHtml = item.scoreWithCoffee ? `<br><span style="color: var(--secondary); font-size: 0.9em;">☕ With Coffee: ${item.scoreWithCoffee}/10</span>` : '';
         
         div.innerHTML = `
@@ -391,7 +406,7 @@ function renderHistoryAndPins() {
             let infoCoffeeStr = item.scoreWithCoffee ? `<br>☕: ${item.scoreWithCoffee}` : '';
             
             currentMarker.addListener("click", () => {
-                showDetail(item, index); 
+                showDetail(item); 
                 map.setCenter(currentMarker.getPosition());
                 globalInfoWindow.setContent(`<div style="font-family:'Quicksand'; padding:5px; text-align:center;"><strong>${item.cafe}</strong><br>Our ⭐: ${item.score} ${infoCoffeeStr} | Google ⭐: ${item.googleRating || 'N/A'}</div>`);
                 globalInfoWindow.open(map, currentMarker);
@@ -401,7 +416,7 @@ function renderHistoryAndPins() {
         }
 
         div.onclick = () => {
-            showDetail(item, index); 
+            showDetail(item); 
             if (item.lat && item.lng && currentMarker) {
                 map.setCenter({lat: item.lat, lng: item.lng});
                 map.setZoom(16);
