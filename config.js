@@ -1,4 +1,4 @@
-const CONFIG = {
+window.CONFIG = {
     GOOGLE_MAPS_API_KEY: "AIzaSyAxF46uw7iBJkVyUtMZ6oIyim5x1YlLLWc",
     
     FIREBASE_CONFIG: {

@@ -1,11 +1,17 @@
+// --- IMPORT FIREBASE MODULAR SDK ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { 
+    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy 
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
 // --- INITIALIZE FIREBASE ---
-firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
-const db = firebase.firestore();
+const app = initializeApp(window.CONFIG.FIREBASE_CONFIG);
+const db = getFirestore(app);
 
 // --- DYNAMICALLY LOAD GOOGLE MAPS ---
 function loadGoogleMaps() {
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.CONFIG.GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
@@ -17,29 +23,28 @@ let markers = [];
 let currentPlaceData = null; 
 let activeSearchMarker = null; 
 let globalInfoWindow; 
-let currentReviewId = null; // Changed from Index to ID for Firebase
-let globalHistory = []; // Holds data pulled from Firebase
+let currentReviewId = null; 
+let globalHistory = []; 
 
 const breadIconURL = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><text x="0" y="28" font-size="28">🥖</text></svg>`;
 
 // --- FETCH DATA FROM FIREBASE ---
-// This grabs all reviews from the cloud and updates the list/map
 async function fetchReviews() {
     try {
-        const snapshot = await db.collection("bmo_reviews").orderBy("date", "desc").get();
-        globalHistory = snapshot.docs.map(doc => ({
-            id: doc.id, // Store the Firebase document ID so we can edit/delete it later
-            ...doc.data()
+        const q = query(collection(db, "bmo_reviews"), orderBy("date", "desc"));
+        const snapshot = await getDocs(q);
+        globalHistory = snapshot.docs.map(docSnapshot => ({
+            id: docSnapshot.id, 
+            ...docSnapshot.data()
         }));
         renderHistoryAndPins();
     } catch (error) {
         console.error("Error fetching reviews: ", error);
-        alert("Failed to load reviews from the cloud. Check console for details.");
     }
 }
 
 // --- UI NAVIGATION LOGIC ---
-function showHome() {
+window.showHome = function() {
     document.getElementById('homeView').classList.add('active');
     document.getElementById('formView').classList.remove('active');
     document.getElementById('detailView').classList.remove('active');
@@ -48,15 +53,15 @@ function showHome() {
     currentReviewId = null; 
 }
 
-function cancelReview() {
+window.cancelReview = function() {
     if (activeSearchMarker) activeSearchMarker.setMap(null); 
-    showHome();
+    window.showHome();
     map.setZoom(13); 
 }
 
-function closeDetail() {
+window.closeDetail = function() {
     globalInfoWindow.close(); 
-    showHome();
+    window.showHome();
     map.setZoom(13);
 }
 
@@ -84,11 +89,11 @@ function showForm(placeData) {
         document.getElementById(`${cat.id}-p2`).value = '';
     });
     document.getElementById('hadCoffee').checked = false;
-    toggleCoffee();
+    window.toggleCoffee();
 }
 
 function showDetail(review) {
-    currentReviewId = review.id; // Save Firebase ID
+    currentReviewId = review.id; 
     
     document.getElementById('homeView').classList.remove('active');
     document.getElementById('formView').classList.remove('active');
@@ -129,13 +134,13 @@ function showDetail(review) {
     }
 }
 
-// --- EDIT & DELETE LOGIC (UPDATED FOR FIREBASE) ---
-async function deleteReview() {
+// --- EDIT & DELETE LOGIC ---
+window.deleteReview = async function() {
     if(confirm("Are you sure you want to delete this review? 🥺")) {
         try {
-            await db.collection("bmo_reviews").doc(currentReviewId).delete();
-            closeDetail();
-            fetchReviews(); // Re-fetch from cloud
+            await deleteDoc(doc(db, "bmo_reviews", currentReviewId));
+            window.closeDetail();
+            fetchReviews(); 
         } catch (error) {
             console.error("Error deleting document: ", error);
             alert("Failed to delete.");
@@ -143,7 +148,7 @@ async function deleteReview() {
     }
 }
 
-function openEditForm() {
+window.openEditForm = function() {
     const review = globalHistory.find(r => r.id === currentReviewId);
     
     currentPlaceData = {
@@ -171,7 +176,7 @@ function openEditForm() {
     
     const hadCoffee = review.rawScores && review.rawScores['coffee'];
     document.getElementById('hadCoffee').checked = !!hadCoffee;
-    toggleCoffee();
+    window.toggleCoffee();
     
     categories.forEach(cat => {
         if (review.rawScores && review.rawScores[cat.id]) {
@@ -229,10 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     loadGoogleMaps();
-    fetchReviews(); // Pull data from Firebase when the page loads
+    fetchReviews(); 
 });
 
-function toggleCoffee() {
+window.toggleCoffee = function() {
     const isChecked = document.getElementById('hadCoffee').checked;
     const collapsible = document.getElementById('coffee-collapsible');
     if (isChecked) {
@@ -295,7 +300,7 @@ window.initMap = function() {
 };
 
 // --- SAVE TO FIREBASE ---
-async function calculateAndSave() {
+window.calculateAndSave = async function() {
     if (!currentPlaceData) return;
 
     let coreSum = 0;
@@ -350,17 +355,15 @@ async function calculateAndSave() {
 
     try {
         if (currentReviewId !== null) {
-            // Update existing review in cloud
-            await db.collection("bmo_reviews").doc(currentReviewId).update(review);
+            await updateDoc(doc(db, "bmo_reviews", currentReviewId), review);
         } else {
-            // Add new review to cloud
-            await db.collection("bmo_reviews").add(review);
+            await addDoc(collection(db, "bmo_reviews"), review);
         }
         
         if (activeSearchMarker) activeSearchMarker.setMap(null);
-        showHome();
+        window.showHome();
         map.setZoom(14);
-        fetchReviews(); // Pull the fresh data down immediately
+        fetchReviews(); 
 
     } catch (error) {
         console.error("Error saving document: ", error);
@@ -376,7 +379,6 @@ function renderHistoryAndPins() {
     markers.forEach(marker => marker.setMap(null));
     markers = [];
 
-    // Use globalHistory which was pulled from Firebase
     globalHistory.forEach((item) => { 
         const div = document.createElement('div');
         div.className = 'history-item';
