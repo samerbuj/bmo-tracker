@@ -266,6 +266,7 @@ window.initMap = async function() {
     globalInfoWindow = new google.maps.InfoWindow();
 
     const autocomplete = new PlaceAutocompleteElement();
+    autocomplete.placeholder = "Add a new place!";
     document.getElementById("searchContainer").appendChild(autocomplete);
 
     autocomplete.addEventListener("gmp-placeselect", async (event) => {
