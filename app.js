@@ -30,7 +30,7 @@ let currentWishlistId = null;
 let convertingWishlistId = null; 
 let globalHistory = []; 
 let globalWishlist = [];
-let currentCustomPhotos = []; // NEW: Holds your uploaded photos!
+let currentCustomPhotos = []; 
 
 const breadIconURL = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><text x="0" y="28" font-size="28">🥖</text></svg>`;
 const pinIconURL = `data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><text x="0" y="28" font-size="28">📌</text></svg>`;
@@ -52,8 +52,17 @@ async function fetchAllData() {
     }
 }
 
-// --- NEW: IMAGE COMPRESSOR & UPLOADER ---
-// Shrinks images so they fit securely in the database
+// --- NEW: LIGHTBOX LOGIC ---
+window.openImageModal = function(src) {
+    document.getElementById('expandedImg').src = src;
+    document.getElementById('imageModal').style.display = 'flex';
+}
+
+window.closeImageModal = function() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+// --- IMAGE COMPRESSOR & UPLOADER ---
 function compressImage(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -63,7 +72,7 @@ function compressImage(file) {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_SIZE = 800; // Keeps file sizes very small!
+                const MAX_SIZE = 800; 
                 let width = img.width;
                 let height = img.height;
 
@@ -79,7 +88,6 @@ function compressImage(file) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Compress to 70% quality JPEG
                 resolve(canvas.toDataURL('image/jpeg', 0.7)); 
             }
         }
@@ -93,7 +101,7 @@ window.handlePhotoUpload = async function(event) {
     const preview = document.getElementById('customPhotoPreview');
     preview.innerHTML = '<span style="font-size: 0.85em; color: var(--primary);">Compressing photos... ⏳</span>';
     
-    currentCustomPhotos = []; // Reset array for new selections
+    currentCustomPhotos = []; 
 
     for (let file of files) {
         const compressedBase64 = await compressImage(file);
@@ -107,7 +115,8 @@ function renderCustomPhotoPreview() {
     const preview = document.getElementById('customPhotoPreview');
     preview.innerHTML = '';
     currentCustomPhotos.forEach(src => {
-        preview.innerHTML += `<img src="${src}" alt="Our photo preview">`;
+        // NEW: Added onclick and pointer cursor class
+        preview.innerHTML += `<img src="${src}" alt="Our photo preview" onclick="openImageModal(this.src)">`;
     });
 }
 
@@ -122,17 +131,20 @@ function loadFreshPhotos(placeId, containerId, fallbackPhotos) {
             gallery.innerHTML = '';
             if (status === google.maps.places.PlacesServiceStatus.OK && place.photos && place.photos.length > 0) {
                 place.photos.slice(0, 10).forEach(photo => {
-                    gallery.innerHTML += `<img src="${photo.getUrl({maxWidth: 400})}" alt="Cafe photo">`;
+                    // NEW: Changed to maxWidth 800 and added onclick
+                    gallery.innerHTML += `<img src="${photo.getUrl({maxWidth: 800})}" alt="Cafe photo" onclick="openImageModal(this.src)">`;
                 });
             } else if (fallbackPhotos && fallbackPhotos.length > 0) {
-                fallbackPhotos.forEach(url => gallery.innerHTML += `<img src="${url}" alt="Cafe photo">`);
+                // NEW: Added onclick
+                fallbackPhotos.forEach(url => gallery.innerHTML += `<img src="${url}" alt="Cafe photo" onclick="openImageModal(this.src)">`);
             } else {
                 gallery.innerHTML = '<span style="font-size: 0.8em; color: #888;">No photos available.</span>';
             }
         });
     } else if (fallbackPhotos && fallbackPhotos.length > 0) {
         gallery.innerHTML = '';
-        fallbackPhotos.forEach(url => gallery.innerHTML += `<img src="${url}" alt="Cafe photo">`);
+        // NEW: Added onclick
+        fallbackPhotos.forEach(url => gallery.innerHTML += `<img src="${url}" alt="Cafe photo" onclick="openImageModal(this.src)">`);
     } else {
         gallery.innerHTML = '<span style="font-size: 0.8em; color: #888;">No photos available.</span>';
     }
@@ -193,7 +205,6 @@ function showForm(placeData) {
     document.getElementById('formGoogleRating').innerText = `🌍 Google Rating: ${placeData.googleRating} / 5`;
     document.getElementById('reviewComment').value = '';
     
-    // Reset custom photos
     currentCustomPhotos = [];
     document.getElementById('photoUpload').value = '';
     document.getElementById('customPhotoPreview').innerHTML = '';
@@ -240,11 +251,11 @@ window.showDetail = function(review) {
         commentSection.style.display = 'none';
     }
 
-    // NEW: If you have your own photos, show them! Otherwise, pull Google's.
     const detailPhotos = document.getElementById('detailPhotos');
     if (review.customPhotos && review.customPhotos.length > 0) {
         detailPhotos.innerHTML = '';
-        review.customPhotos.forEach(url => detailPhotos.innerHTML += `<img src="${url}" alt="Our photo">`);
+        // NEW: Added onclick
+        review.customPhotos.forEach(url => detailPhotos.innerHTML += `<img src="${url}" alt="Our photo" onclick="openImageModal(this.src)">`);
     } else {
         loadFreshPhotos(review.placeId, 'detailPhotos', review.photos);
     }
@@ -347,9 +358,8 @@ window.openEditForm = function() {
     
     loadFreshPhotos(review.placeId, 'formPhotos', review.photos);
     
-    // NEW: Load existing custom photos back into the form!
     currentCustomPhotos = review.customPhotos ? [...review.customPhotos] : [];
-    document.getElementById('photoUpload').value = ''; // Reset file input text
+    document.getElementById('photoUpload').value = ''; 
     renderCustomPhotoPreview();
     
     const hadCoffee = review.rawScores && review.rawScores['coffee'];
@@ -451,7 +461,8 @@ window.initMap = function() {
 
         let extractedPhotos = [];
         if (place.photos) {
-            extractedPhotos = place.photos.slice(0, 10).map(photo => photo.getUrl({maxWidth: 400}));
+            // NEW: Fetch max width 800px so it's clear when expanded
+            extractedPhotos = place.photos.slice(0, 10).map(photo => photo.getUrl({maxWidth: 800}));
         }
 
         currentPlaceData = {
@@ -531,7 +542,7 @@ window.calculateAndSave = async function() {
         photos: currentPlaceData.photos,
         rawScores: rawScores,
         comment: commentText,
-        customPhotos: currentCustomPhotos // NEW: Save your custom photos!
+        customPhotos: currentCustomPhotos 
     };
 
     try {

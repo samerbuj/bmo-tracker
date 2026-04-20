@@ -168,6 +168,53 @@ input[type="file"]::file-selector-button:active {
     transform: scale(0.95);
 }
 
+/* --- IMAGE LIGHTBOX & GALLERY HOVER --- */
+.photo-gallery img {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.photo-gallery img:hover {
+    transform: scale(1.05); /* Slight zoom when hovering to show it's clickable */
+}
+
+.image-modal {
+    display: none; /* Hidden by default */
+    position: fixed; 
+    z-index: 9999; /* Sit on top of everything! */
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.85); /* Dark transparent background */
+    align-items: center; 
+    justify-content: center;
+    backdrop-filter: blur(4px); /* Fancy blur effect */
+}
+
+.modal-content {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #fff;
+    font-size: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--primary);
+}
+
 @media (max-width: 768px) {
     body { flex-direction: column; overflow: auto; }
     .sidebar { width: 100%; order: 2; box-shadow: none;}
